@@ -1,0 +1,5 @@
+python-dotenv
+pymediainfo
+pandas
+psycopg2-binary
+boto3

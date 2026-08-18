@@ -1,0 +1,6 @@
+services:
+  app:
+    build: .
+    container_name: poc_app
+    env_file:
+      - .env
