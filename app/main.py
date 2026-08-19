@@ -6,7 +6,7 @@ from pprint import pprint
 load_dotenv()
 
 def main():
-    print("--- データ解析 PoC 開始 ---")
+    print("--- データ解析 PoC 開始（GitHub Actionsの確認） ---")
 
     # XMLの検証
     xml_data = parse_xml("sample_data/PoC_test/STM2026072800333/EXN_STM2026072800333_20260728143556.XML")
