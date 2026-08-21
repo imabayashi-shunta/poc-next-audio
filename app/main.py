@@ -1,27 +1,32 @@
 import os
 from dotenv import load_dotenv
 from parser import parse_xml, parse_csv, parse_video
-from pprint import pprint
+from db import insert_xml_data, insert_csv_data, insert_video_data
 
 load_dotenv()
 
 def main():
-    print("--- データ解析 PoC 開始（GitHub Actionsの確認） ---")
+    print("--- データ解析 & DB登録 PoC 開始 ---")
 
-    # XMLの検証
-    xml_data = parse_xml("sample_data/PoC_test/STM2026072800333/EXN_STM2026072800333_20260728143556.XML")
-    pprint(f"【XML抽出結果】\n{xml_data}")
-    print("")
+    # 1. XMLの解析とDB登録
+    xml_file = "sample_data/PoC_test/STM2026072800333/EXN_STM2026072800333_20260728143556.XML"
+    xml_data = parse_xml(xml_file)
+    if xml_data:
+        insert_xml_data(xml_data)
 
-    # CSVの検証
-    csv_data = parse_csv("sample_data/PoC_test/EXI_天気：葛飾花火大会_20260728143554.CSV")
-    pprint(f"【CSV抽出結果】\n{csv_data}")
-    print("")
+    # 2. CSVの解析とDB登録
+    csv_file = "sample_data/PoC_test/EXI_天気：葛飾花火大会_20260728143554.CSV"
+    csv_data = parse_csv(csv_file)
+    if csv_data:
+        insert_csv_data(csv_data)
 
-    # 映像ファイルの検証
-    mp4_data = parse_video("sample_data/PoC_test/20260818_次期音声PoCの映像素材.mp4")
-    pprint(f"【MP4抽出結果】\n{mp4_data}")
-    print("")
+    # 3. 映像ファイルの解析とDB登録
+    mp4_file = "sample_data/PoC_test/20260818_次期音声PoCの映像素材.mp4"
+    mp4_data = parse_video(mp4_file)
+    if mp4_data:
+        insert_video_data(mp4_data)
+
+    print("--- 処理が完了しました ---")
 
 if __name__ == "__main__":
     main()
