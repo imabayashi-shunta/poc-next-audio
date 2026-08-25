@@ -5,7 +5,35 @@ from db import insert_xml_data, insert_csv_data, insert_video_data
 
 load_dotenv()
 
+# EFSのマウント先パス（タスク定義で指定したコンテナパス）
+EFS_DIR = "/mnt/efs"
+FILE_PATH = os.path.join(EFS_DIR, "sample.txt")
+
 def main():
+
+    print("--- EFS テスト開始 ---")
+    
+    # 1. テスト用ファイルの書き込み
+    try:
+        os.makedirs(EFS_DIR, exist_ok=True)
+        with open(FILE_PATH, "w", encoding="utf-8") as f:
+            f.write("Hello, Amazon EFS from ECS Fargate!\n")
+        print(f"ファイルの書き込みに成功しました: {FILE_PATH}")
+    except Exception as e:
+        print(f"書き込みエラー: {e}")
+        return
+
+    # 2. テスト用ファイルの読み込み検証
+    try:
+        with open(FILE_PATH, "r", encoding="utf-8") as f:
+            content = f.read()
+        print("--- ファイルの中身 ---")
+        print(content)
+        print("--- EFS 読み込み検証成功 ---")
+    except Exception as e:
+        print(f"読み込みエラー: {e}")
+
+    """
     print("--- データ解析 & DB登録 PoC 開始 ---")
 
     # 1. XMLの解析とDB登録
@@ -27,6 +55,7 @@ def main():
         insert_video_data(mp4_data)
 
     print("--- 処理が完了しました ---")
+    """
 
 if __name__ == "__main__":
     main()
