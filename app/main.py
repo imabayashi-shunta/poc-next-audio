@@ -11,18 +11,20 @@ FILE_PATH = os.path.join(EFS_DIR, "sample.txt")
 
 def main():
 
-    print("--- EFS テスト開始 ---")
+    print("--- EFS 永続化確認テスト開始 ---")
     
+    # ★書き込み処理はコメントアウト（作成しない）
     # 1. テスト用ファイルの書き込み
-    try:
-        os.makedirs(EFS_DIR, exist_ok=True)
-        with open(FILE_PATH, "w", encoding="utf-8") as f:
-            f.write("Hello, Amazon EFS from ECS Fargate!\n")
-        print(f"ファイルの書き込みに成功しました: {FILE_PATH}")
-    except Exception as e:
-        print(f"書き込みエラー: {e}")
-        return
+    # try:
+    #     os.makedirs(EFS_DIR, exist_ok=True)
+    #     with open(FILE_PATH, "w", encoding="utf-8") as f:
+    #         f.write("Hello, Amazon EFS from ECS Fargate!\n")
+    #     print(f"ファイルの書き込みに成功しました: {FILE_PATH}")
+    # except Exception as e:
+    #     print(f"書き込みエラー: {e}")
+    #     return
 
+    # 既存ファイルの読み込みテスト
     # 2. テスト用ファイルの読み込み検証
     try:
         with open(FILE_PATH, "r", encoding="utf-8") as f:
@@ -33,6 +35,7 @@ def main():
     except Exception as e:
         print(f"読み込みエラー: {e}")
 
+    # まとめてコメントアウト
     """
     print("--- データ解析 & DB登録 PoC 開始 ---")
 
