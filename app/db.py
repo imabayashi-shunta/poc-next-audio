@@ -133,3 +133,76 @@ def insert_video_data(data_list: list[dict]):
         print(f"映像 DB登録エラー: {e}")
     finally:
         conn.close()
+
+
+# 映像ファイルの文字起こし結果登録処理
+def insert_transcription_data(data: dict):
+    """
+    文字起こし結果（親テーブル & 子テーブル）を DB にトランザクション登録する
+    """
+    if not data or "parent" not in data or "words" not in data:
+        print("文字起こしデータが不正または存在しないためスキップします。")
+        return
+
+    parent = data["parent"]
+    words = data["words"]
+    transcription_id = parent.get("transcription_id")
+
+    if not transcription_id:
+        print("エラー: transcription_id が取得できていないためDB登録を中止します。")
+        return
+
+    conn = get_connection()
+    try:
+        with conn.cursor() as cur:
+            # 1. 親テーブル (transcriptions) への登録
+            insert_parent_query = """
+                INSERT INTO transcriptions (
+                    language_code, language_probability, text, channel_index,
+                    additional_formats, transcription_id, entities, audio_duration_secs
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                ON CONFLICT (transcription_id) DO NOTHING;
+            """
+            cur.execute(insert_parent_query, (
+                parent.get("language_code"),
+                parent.get("language_probability"),
+                parent.get("text"),
+                parent.get("channel_index"),
+                parent.get("additional_formats"),
+                transcription_id,
+                parent.get("entities"),
+                parent.get("audio_duration_secs")
+            ))
+
+            # 2. 子テーブル (transcription_words) への一括登録
+            if words:
+                insert_words_query = """
+                    INSERT INTO transcription_words (
+                        transcription_id, word_index, text, start_time, end_time,
+                        type, speaker_id, logprob, characters, channel_index
+                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s);
+                """
+                word_records = [
+                    (
+                        transcription_id,
+                        w["word_index"],
+                        w["text"],
+                        w["start_time"],
+                        w["end_time"],
+                        w["type"],
+                        w["speaker_id"],
+                        w["logprob"],
+                        w["characters"],
+                        w["channel_index"]
+                    )
+                    for w in words
+                ]
+                cur.executemany(insert_words_query, word_records)
+
+        conn.commit()
+        print(f"文字起こしデータ（ID: {transcription_id} / 単語数: {len(words)}件）をDBに正常に登録しました。")
+    except Exception as e:
+        conn.rollback()
+        print(f"文字起こし DB登録エラー: {e}")
+    finally:
+        conn.close()

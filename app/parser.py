@@ -1,7 +1,9 @@
+import os
 import csv
 import xml.etree.ElementTree as ET
 from pathlib import Path
 from pymediainfo import MediaInfo
+from elevenlabs.client import ElevenLabs
 
 
 # XMLの解析処理
@@ -102,3 +104,73 @@ def parse_video(file_path: str) -> list[dict]:
 
     # 他の関数と統一して list[dict] 形式で返す
     return [data]
+
+
+# 映像ファイルの文字起こし解析処理
+def transcribe_video(file_path: str) -> dict:
+    """
+    EFS上の映像ファイルを読み込み、ElevenLabs APIで文字起こしを実行して
+    親テーブル・子テーブル用の辞書データを返す
+    """
+    path = Path(file_path)
+    if not path.exists():
+        print(f"エラー: 文字起こし対象ファイルが存在しません -> {file_path}")
+        return {}
+
+    api_key = os.getenv("ELEVENLABS_API_KEY")
+    if not api_key:
+        print("エラー: ELEVENLABS_API_KEY が環境変数に設定されていません。")
+        return {}
+
+    client = ElevenLabs(api_key=api_key)
+
+    try:
+        # EFS上の動画ファイルをバイナリで読み込んでAPIに送信
+        with open(path, "rb") as f:
+            transcription = client.speech_to_text.convert(
+                model_id="scribe_v2",
+                file=f,
+            )
+
+        # 1. 親テーブル (transcriptions) 用のデータ作成
+        parent_data = {
+            "language_code": getattr(transcription, "language_code", ""),
+            "language_probability": getattr(transcription, "language_probability", 0.0),
+            "text": getattr(transcription, "text", ""),
+            "channel_index": getattr(transcription, "channel_index", None),
+            "additional_formats": str(getattr(transcription, "additional_formats", "")) if getattr(transcription, "additional_formats", None) is not None else None,
+            "transcription_id": getattr(transcription, "transcription_id", ""),
+            "entities": str(getattr(transcription, "entities", "")) if getattr(transcription, "entities", None) is not None else None,
+            "audio_duration_secs": getattr(transcription, "audio_duration_secs", 0.0),
+        }
+
+        # 2. 子テーブル (transcription_words) 用のデータ作成
+        words_data = []
+        raw_words = getattr(transcription, "words", []) or []
+        
+        for idx, w in enumerate(raw_words):
+            # オブジェクト属性を取得（辞書またはモデル属性に対応）
+            get_val = lambda key: getattr(w, key, None) if not isinstance(w, dict) else w.get(key)
+            
+            chars = get_val("characters")
+            
+            words_data.append({
+                "word_index": idx,
+                "text": get_val("text") or "",
+                "start_time": get_val("start") or 0.0,
+                "end_time": get_val("end") or 0.0,
+                "type": get_val("type") or "word",
+                "speaker_id": get_val("speaker_id"),
+                "logprob": get_val("logprob") or 0.0,
+                "characters": str(chars) if chars is not None else None,
+                "channel_index": get_val("channel_index"),
+            })
+
+        return {
+            "parent": parent_data,
+            "words": words_data
+        }
+
+    except Exception as e:
+        print(f"文字起こし API 実行エラー: {e}")
+        return {}

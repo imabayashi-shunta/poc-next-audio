@@ -1,7 +1,7 @@
 import os
 from dotenv import load_dotenv
-from parser import parse_xml, parse_csv, parse_video
-from db import insert_xml_data, insert_csv_data, insert_video_data
+from parser import parse_xml, parse_csv, parse_video, transcribe_video
+from db import insert_xml_data, insert_csv_data, insert_video_data, insert_transcription_data
 
 load_dotenv()
 
@@ -29,6 +29,13 @@ def main():
     mp4_data = parse_video(mp4_file)
     if mp4_data:
         insert_video_data(mp4_data)
+
+    # 4. EFS上のMP4ファイルから文字起こし実行およびDB登録
+    # ※WinSCP等で EFS上の /mnt/efs/sample_data/PoC_test/Mojiokoshi_test/15_one.mp4 に配置されている想定
+    audio_file = os.path.join(EFS_BASE, "Mojiokoshi_test/15_one.mp4")
+    transcription_result = transcribe_video(audio_file)
+    if transcription_result:
+        insert_transcription_data(transcription_result)
 
     print("--- EFS経由でのDB登録処理が完了しました ---")
 
