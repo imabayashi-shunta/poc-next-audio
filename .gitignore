@@ -1,5 +1,6 @@
 # 手動で追加
 output/    # 文字起こし結果のローカル出力用のフォルダのため不要
+bk/        # バックアップフォルダは不要
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
